@@ -1,0 +1,18 @@
+
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+}
+
+android {
+    namespace = "com.meekamoodz.imagepdfviewer"
+    compileSdk = 35
+
+    defaultConfig {
+        applicationId = "com.meekamoodz.imagepdfviewer"
+        minSdk = 23
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
+    }
+}
