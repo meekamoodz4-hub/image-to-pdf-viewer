@@ -22,17 +22,15 @@ import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
 
 class MainActivity : Activity() {
-
-```
 private val pickImagesRequest = 100
 private val savePdfRequest = 101
-
 private val selectedImages = mutableListOf<Uri>()
 private lateinit var statusText: TextView
 private lateinit var createButton: Button
 private var lastSavedPdf: Uri? = null
 private var bannerAd: AdView? = null
 
+```
 override fun onCreate(savedInstanceState: Bundle?) {
     super.onCreate(savedInstanceState)
 
@@ -40,9 +38,7 @@ override fun onCreate(savedInstanceState: Bundle?) {
         orientation = LinearLayout.VERTICAL
         setBackgroundColor(Color.rgb(245, 247, 252))
     }
-
     val scrollView = ScrollView(this)
-
     val layout = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         gravity = Gravity.CENTER_HORIZONTAL
@@ -55,7 +51,6 @@ override fun onCreate(savedInstanceState: Bundle?) {
         setTextColor(Color.rgb(35, 55, 100))
         gravity = Gravity.CENTER
     }
-
     val subtitle = TextView(this).apply {
         text = "Turn your pictures into PDF files"
         textSize = 16f
@@ -63,12 +58,10 @@ override fun onCreate(savedInstanceState: Bundle?) {
         gravity = Gravity.CENTER
         setPadding(0, 12, 0, 30)
     }
-
     val chooseButton = Button(this).apply {
         text = "Select Pictures"
         setOnClickListener { chooseImages() }
     }
-
     statusText = TextView(this).apply {
         text = "No pictures selected yet"
         textSize = 16f
@@ -76,27 +69,25 @@ override fun onCreate(savedInstanceState: Bundle?) {
         gravity = Gravity.CENTER
         setPadding(0, 22, 0, 22)
     }
-
     createButton = Button(this).apply {
         text = "Convert and Save PDF"
         isEnabled = false
         setOnClickListener { startPdfCreation() }
     }
-
     val openButton = Button(this).apply {
         text = "Open Last Saved PDF"
         setOnClickListener { openLastPdf() }
     }
-
     val privacyButton = Button(this).apply {
         text = "Privacy Policy"
         setOnClickListener {
-            val intent = Intent(
-                Intent.ACTION_VIEW,
-                Uri.parse("https://sites.google.com/view/droptechdevelopers/image-to-pdf-privacy-policy")
-            )
             try {
-                startActivity(intent)
+                startActivity(
+                    Intent(
+                        Intent.ACTION_VIEW,
+                        Uri.parse("https://sites.google.com/view/droptechdevelopers/image-to-pdf-privacy-policy")
+                    )
+                )
             } catch (_: Exception) {
                 Toast.makeText(
                     this@MainActivity,
@@ -106,7 +97,6 @@ override fun onCreate(savedInstanceState: Bundle?) {
             }
         }
     }
-
     val note = TextView(this).apply {
         text = "Choose one or more pictures, then convert them into a single PDF. You can choose where to save the file."
         textSize = 14f
@@ -133,55 +123,47 @@ override fun onCreate(savedInstanceState: Bundle?) {
             1f
         )
     )
-
     setContentView(outerLayout)
 
-    // Initialize Google Mobile Ads and load your real banner ad.
     MobileAds.initialize(this) {
-        runOnUiThread {
-            loadBannerAd(outerLayout)
-        }
+        runOnUiThread { loadBannerAd(outerLayout) }
     }
 }
 
 private fun loadBannerAd(parent: LinearLayout) {
     if (isFinishing || isDestroyed || bannerAd != null) return
 
-    bannerAd = AdView(this).apply {
-        adSize = AdSize.BANNER
-        adUnitId = "ca-app-pub-1083885756946416/5224479810"
-    }
+    val adView = AdView(this)
+    adView.setAdSize(AdSize.BANNER)
+    adView.adUnitId = "ca-app-pub-1083885756946416/5224479810"
+    bannerAd = adView
 
-    val adContainer = LinearLayout(this).apply {
+    val container = LinearLayout(this).apply {
         gravity = Gravity.CENTER
         setPadding(0, 8, 0, 8)
         addView(
-            bannerAd,
+            adView,
             LinearLayout.LayoutParams(
                 AdSize.BANNER.getWidthInPixels(this@MainActivity),
                 AdSize.BANNER.getHeightInPixels(this@MainActivity)
             )
         )
     }
-
     parent.addView(
-        adContainer,
+        container,
         LinearLayout.LayoutParams(
             ViewGroup.LayoutParams.MATCH_PARENT,
             ViewGroup.LayoutParams.WRAP_CONTENT
         )
     )
-
-    bannerAd?.loadAd(AdRequest.Builder().build())
+    adView.loadAd(AdRequest.Builder().build())
 }
 
 private fun buttonParams(): LinearLayout.LayoutParams {
     return LinearLayout.LayoutParams(
         ViewGroup.LayoutParams.MATCH_PARENT,
         ViewGroup.LayoutParams.WRAP_CONTENT
-    ).apply {
-        bottomMargin = 12
-    }
+    ).apply { bottomMargin = 12 }
 }
 
 private fun chooseImages() {
@@ -190,7 +172,6 @@ private fun chooseImages() {
         type = "image/*"
         putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
     }
-
     startActivityForResult(intent, pickImagesRequest)
 }
 
@@ -201,12 +182,10 @@ override fun onActivityResult(
     data: Intent?
 ) {
     super.onActivityResult(requestCode, resultCode, data)
-
     if (resultCode != RESULT_OK || data == null) return
 
     if (requestCode == pickImagesRequest) {
         selectedImages.clear()
-
         data.clipData?.let { clip ->
             for (i in 0 until clip.itemCount) {
                 selectedImages.add(clip.getItemAt(i).uri)
@@ -214,38 +193,29 @@ override fun onActivityResult(
         } ?: data.data?.let { uri ->
             selectedImages.add(uri)
         }
-
         statusText.text = if (selectedImages.isEmpty()) {
             "No pictures selected"
         } else {
             "${selectedImages.size} picture(s) selected"
         }
-
         createButton.isEnabled = selectedImages.isNotEmpty()
     }
 
     if (requestCode == savePdfRequest) {
-        val destination = data.data ?: return
-        savePdfTo(destination)
+        data.data?.let { savePdfTo(it) }
     }
 }
 
 private fun startPdfCreation() {
     if (selectedImages.isEmpty()) {
-        Toast.makeText(
-            this,
-            "Select pictures first",
-            Toast.LENGTH_SHORT
-        ).show()
+        Toast.makeText(this, "Select pictures first", Toast.LENGTH_SHORT).show()
         return
     }
-
     val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
         addCategory(Intent.CATEGORY_OPENABLE)
         type = "application/pdf"
         putExtra(Intent.EXTRA_TITLE, "MyPictures.pdf")
     }
-
     startActivityForResult(intent, savePdfRequest)
 }
 
@@ -255,10 +225,8 @@ private fun savePdfTo(destination: Uri) {
 
     Thread {
         var document: PdfDocument? = null
-
         try {
             document = PdfDocument()
-
             selectedImages.forEachIndexed { index, uri ->
                 val bitmap = contentResolver.openInputStream(uri).use { stream ->
                     BitmapFactory.decodeStream(stream)
@@ -268,30 +236,21 @@ private fun savePdfTo(destination: Uri) {
                     val pageWidth = 595
                     val pageHeight = 842
                     val margin = 28f
-
                     val pageInfo = PdfDocument.PageInfo.Builder(
-                        pageWidth,
-                        pageHeight,
-                        index + 1
+                        pageWidth, pageHeight, index + 1
                     ).create()
-
                     val page = document.startPage(pageInfo)
                     val paint = Paint(
                         Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG
                     )
-
                     val available = RectF(
-                        margin,
-                        margin,
-                        pageWidth - margin,
-                        pageHeight - margin
+                        margin, margin,
+                        pageWidth - margin, pageHeight - margin
                     )
-
                     val scale = minOf(
                         available.width() / bitmap.width,
                         available.height() / bitmap.height
                     )
-
                     val drawWidth = bitmap.width * scale
                     val drawHeight = bitmap.height * scale
                     val left = (pageWidth - drawWidth) / 2f
@@ -302,14 +261,11 @@ private fun savePdfTo(destination: Uri) {
                         bitmap,
                         null,
                         RectF(
-                            left,
-                            top,
-                            left + drawWidth,
-                            top + drawHeight
+                            left, top,
+                            left + drawWidth, top + drawHeight
                         ),
                         paint
                     )
-
                     document.finishPage(page)
                 } finally {
                     bitmap.recycle()
@@ -317,35 +273,25 @@ private fun savePdfTo(destination: Uri) {
             }
 
             contentResolver.openOutputStream(destination, "w").use { output ->
-                if (output == null) {
-                    throw Exception("Cannot open save location")
-                }
+                if (output == null) throw Exception("Cannot open save location")
                 document.writeTo(output)
             }
 
             runOnUiThread {
                 lastSavedPdf = destination
                 statusText.text = "PDF saved successfully!"
-
                 Toast.makeText(
-                    this,
-                    "Your PDF has been saved",
-                    Toast.LENGTH_LONG
+                    this, "Your PDF has been saved", Toast.LENGTH_LONG
                 ).show()
-
                 createButton.isEnabled = selectedImages.isNotEmpty()
                 openLastPdf()
             }
         } catch (e: Exception) {
             runOnUiThread {
                 statusText.text = "Could not create PDF. Please try again."
-
                 Toast.makeText(
-                    this,
-                    e.message ?: "An error occurred",
-                    Toast.LENGTH_LONG
+                    this, e.message ?: "An error occurred", Toast.LENGTH_LONG
                 ).show()
-
                 createButton.isEnabled = selectedImages.isNotEmpty()
             }
         } finally {
@@ -356,19 +302,13 @@ private fun savePdfTo(destination: Uri) {
 
 private fun openLastPdf() {
     val uri = lastSavedPdf ?: run {
-        Toast.makeText(
-            this,
-            "Save a PDF first",
-            Toast.LENGTH_SHORT
-        ).show()
+        Toast.makeText(this, "Save a PDF first", Toast.LENGTH_SHORT).show()
         return
     }
-
     val intent = Intent(Intent.ACTION_VIEW).apply {
         setDataAndType(uri, "application/pdf")
         addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
     }
-
     try {
         startActivity(intent)
     } catch (_: Exception) {
