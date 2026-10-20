@@ -3,11 +3,11 @@ package com.meekamoodz.imagepdfviewer
 
 import android.app.Activity
 import android.content.Intent
-import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
+import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Bundle
@@ -27,6 +27,7 @@ class MainActivity : Activity() {
 
     private val selectedImages = mutableListOf<Uri>()
     private var lastSavedPdf: Uri? = null
+
     private lateinit var imageStatus: TextView
     private lateinit var adView: AdView
 
@@ -137,6 +138,7 @@ class MainActivity : Activity() {
         }
 
         adView = AdView(this)
+
         adContainer.addView(
             adView,
             LinearLayout.LayoutParams(
@@ -164,6 +166,7 @@ class MainActivity : Activity() {
             text = buttonText
             textSize = 16f
             isAllCaps = false
+
             setOnClickListener {
                 action()
             }
@@ -172,6 +175,7 @@ class MainActivity : Activity() {
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             )
+
             params.setMargins(0, 6, 0, 6)
             layoutParams = params
         }
@@ -207,7 +211,9 @@ class MainActivity : Activity() {
 
                 if (clipData != null) {
                     for (i in 0 until clipData.itemCount) {
-                        selectedImages.add(clipData.getItemAt(i).uri)
+                        selectedImages.add(
+                            clipData.getItemAt(i).uri
+                        )
                     }
                 } else {
                     data.data?.let { uri ->
@@ -273,9 +279,11 @@ class MainActivity : Activity() {
             val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
             for ((index, uri) in selectedImages.withIndex()) {
-                val bitmap = contentResolver.openInputStream(uri)?.use {
-                    BitmapFactory.decodeStream(it)
-                } ?: throw IllegalStateException(
+                val bitmap = contentResolver
+                    .openInputStream(uri)
+                    ?.use { input ->
+                        BitmapFactory.decodeStream(input)
+                    } ?: throw IllegalStateException(
                     "Could not read image ${index + 1}"
                 )
 
@@ -309,7 +317,7 @@ class MainActivity : Activity() {
                     canvas.drawBitmap(
                         bitmap,
                         null,
-                        android.graphics.RectF(
+                        RectF(
                             left,
                             top,
                             left + drawWidth,
@@ -334,9 +342,12 @@ class MainActivity : Activity() {
 
             Toast.makeText(
                 this,
-                "PDF saved successfully",
-                Toast.LENGTH_LONG
+                "PDF saved successfully. Opening preview...",
+                Toast.LENGTH_SHORT
             ).show()
+
+            // Automatically open the saved PDF after saving.
+            openLastSavedPdf()
 
         } catch (e: Exception) {
             Toast.makeText(
@@ -368,10 +379,11 @@ class MainActivity : Activity() {
             }
 
             startActivity(intent)
+
         } catch (e: Exception) {
             Toast.makeText(
                 this,
-                "No PDF viewer found on this phone",
+                "No compatible PDF viewer found on this phone",
                 Toast.LENGTH_LONG
             ).show()
         }
@@ -383,7 +395,9 @@ class MainActivity : Activity() {
                 Intent.ACTION_VIEW,
                 Uri.parse(PRIVACY_POLICY_URL)
             )
+
             startActivity(intent)
+
         } catch (e: Exception) {
             Toast.makeText(
                 this,
@@ -405,6 +419,7 @@ class MainActivity : Activity() {
         if (::adView.isInitialized) {
             adView.destroy()
         }
+
         super.onDestroy()
     }
 }
