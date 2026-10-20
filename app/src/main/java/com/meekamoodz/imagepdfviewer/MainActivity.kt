@@ -2,7 +2,6 @@
 package com.meekamoodz.imagepdfviewer
 
 import android.app.Activity
-import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -227,6 +226,7 @@ class MainActivity : Activity() {
     }
 
     // INTERSTITIAL AD
+
     private fun loadInterstitialAd() {
         InterstitialAd.load(
             this,
@@ -286,6 +286,7 @@ class MainActivity : Activity() {
     }
 
     // APP OPEN AD
+
     private fun loadAppOpenAd() {
         AppOpenAd.load(
             this,
@@ -339,6 +340,7 @@ class MainActivity : Activity() {
     }
 
     // REWARDED AD
+
     private fun loadRewardedAd() {
         RewardedAd.load(
             this,
@@ -427,40 +429,26 @@ class MainActivity : Activity() {
             CREATE_PDF_REQUEST -> {
                 data.data?.let { destination ->
                     pendingDestination = destination
-                    showRewardedSaveDialog()
+                    showRewardedAd()
                 }
             }
         }
     }
 
-    private fun showRewardedSaveDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Watch an ad to unlock PDF saving?")
-            .setMessage(
-                "You can watch a rewarded ad before saving, " +
-                    "or save your PDF without watching an ad."
-            )
-            .setPositiveButton("Watch ad") { _, _ ->
-                showRewardedAd()
-            }
-            .setNegativeButton("Save without ad") { _, _ ->
-                savePendingPdf()
-            }
-            .setNeutralButton("Cancel", null)
-            .show()
-    }
+    // PDF SAVING REQUIRES A COMPLETED REWARDED AD
 
     private fun showRewardedAd() {
         val ad = rewardedAd
 
         if (ad == null) {
+            pendingDestination = null
+
             Toast.makeText(
                 this,
-                "The ad isn't ready. You can still save your PDF.",
+                "A rewarded ad isn't available right now. Your PDF was not saved. Please try again later.",
                 Toast.LENGTH_LONG
             ).show()
 
-            showSaveWithoutAdDialog()
             loadRewardedAd()
             return
         }
@@ -475,7 +463,13 @@ class MainActivity : Activity() {
                     if (rewardEarned) {
                         savePendingPdf()
                     } else {
-                        showSaveWithoutAdDialog()
+                        pendingDestination = null
+
+                        Toast.makeText(
+                            this@MainActivity,
+                            "The ad wasn't completed, so your PDF was not saved. Please watch the full ad to save.",
+                            Toast.LENGTH_LONG
+                        ).show()
                     }
 
                     loadRewardedAd()
@@ -484,35 +478,21 @@ class MainActivity : Activity() {
                 override fun onAdFailedToShowFullScreenContent(
                     error: AdError
                 ) {
+                    pendingDestination = null
+
                     Toast.makeText(
                         this@MainActivity,
-                        "The ad couldn't be shown. You can still save.",
+                        "The ad couldn't be shown. Your PDF was not saved. Please try again later.",
                         Toast.LENGTH_LONG
                     ).show()
 
-                    showSaveWithoutAdDialog()
                     loadRewardedAd()
                 }
             }
 
-        // FIX: RewardedAd.show expects one RewardItem parameter.
         ad.show(this) { _ ->
             rewardEarned = true
         }
-    }
-
-    private fun showSaveWithoutAdDialog() {
-        AlertDialog.Builder(this)
-            .setTitle("Save your PDF")
-            .setMessage(
-                "The reward wasn't completed. " +
-                    "You can still save your PDF without an ad."
-            )
-            .setPositiveButton("Save PDF") { _, _ ->
-                savePendingPdf()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
     }
 
     private fun savePendingPdf() {
