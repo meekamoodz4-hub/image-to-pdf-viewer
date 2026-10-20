@@ -1,29 +1,31 @@
 
-<?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+plugins {
+    id("com.android.application")
+    id("org.jetbrains.kotlin.android")
+}
 
-    <uses-permission android:name="android.permission.INTERNET" />
+android {
+    namespace = "com.meekamoodz.imagepdfviewer"
+    compileSdk = 35
 
-    <application
-        android:allowBackup="true"
-        android:label="Image to PDF Viewer Converter"
-        android:supportsRtl="true"
-        android:theme="@android:style/Theme.Material.Light.NoActionBar">
+    defaultConfig {
+        applicationId = "com.meekamoodz.imagepdfviewer"
+        minSdk = 23
+        targetSdk = 35
+        versionCode = 1
+        versionName = "1.0"
+    }
 
-        <meta-data
-            android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-1083885756946416~3424312987" />
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
 
-        <activity
-            android:name=".MainActivity"
-            android:exported="true">
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
 
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-
-        </activity>
-
-    </application>
-</manifest>
+dependencies {
+    implementation("com.google.android.gms:play-services-ads:25.5.0")
+}
