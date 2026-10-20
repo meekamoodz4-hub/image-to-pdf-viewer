@@ -1,11 +1,13 @@
+
 package com.meekamoodz.imagepdfviewer
 
 import android.app.Activity
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.RectF
 import android.graphics.pdf.PdfDocument
 import android.net.Uri
 import android.os.Bundle
@@ -22,309 +24,387 @@ import com.google.android.gms.ads.AdView
 import com.google.android.gms.ads.MobileAds
 
 class MainActivity : Activity() {
-private val pickImagesRequest = 100
-private val savePdfRequest = 101
-private val selectedImages = mutableListOf<Uri>()
-private lateinit var statusText: TextView
-private lateinit var createButton: Button
-private var lastSavedPdf: Uri? = null
-private var bannerAd: AdView? = null
 
-```
-override fun onCreate(savedInstanceState: Bundle?) {
-    super.onCreate(savedInstanceState)
+    private val selectedImages = mutableListOf<Uri>()
+    private var lastSavedPdf: Uri? = null
+    private lateinit var imageStatus: TextView
+    private lateinit var adView: AdView
 
-    val outerLayout = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        setBackgroundColor(Color.rgb(245, 247, 252))
-    }
-    val scrollView = ScrollView(this)
-    val layout = LinearLayout(this).apply {
-        orientation = LinearLayout.VERTICAL
-        gravity = Gravity.CENTER_HORIZONTAL
-        setPadding(28, 36, 28, 28)
+    companion object {
+        private const val PICK_IMAGES_REQUEST = 100
+        private const val CREATE_PDF_REQUEST = 101
+
+        private const val PRIVACY_POLICY_URL =
+            "https://sites.google.com/view/droptechdevelopers/image-to-pdf-privacy-policy"
+
+        private const val BANNER_AD_UNIT_ID =
+            "ca-app-pub-1083885756946416/5224479810"
     }
 
-    val title = TextView(this).apply {
-        text = "Image to PDF Viewer"
-        textSize = 27f
-        setTextColor(Color.rgb(35, 55, 100))
-        gravity = Gravity.CENTER
-    }
-    val subtitle = TextView(this).apply {
-        text = "Turn your pictures into PDF files"
-        textSize = 16f
-        setTextColor(Color.DKGRAY)
-        gravity = Gravity.CENTER
-        setPadding(0, 12, 0, 30)
-    }
-    val chooseButton = Button(this).apply {
-        text = "Select Pictures"
-        setOnClickListener { chooseImages() }
-    }
-    statusText = TextView(this).apply {
-        text = "No pictures selected yet"
-        textSize = 16f
-        setTextColor(Color.DKGRAY)
-        gravity = Gravity.CENTER
-        setPadding(0, 22, 0, 22)
-    }
-    createButton = Button(this).apply {
-        text = "Convert and Save PDF"
-        isEnabled = false
-        setOnClickListener { startPdfCreation() }
-    }
-    val openButton = Button(this).apply {
-        text = "Open Last Saved PDF"
-        setOnClickListener { openLastPdf() }
-    }
-    val privacyButton = Button(this).apply {
-        text = "Privacy Policy"
-        setOnClickListener {
-            try {
-                startActivity(
-                    Intent(
-                        Intent.ACTION_VIEW,
-                        Uri.parse("https://sites.google.com/view/droptechdevelopers/image-to-pdf-privacy-policy")
-                    )
-                )
-            } catch (_: Exception) {
-                Toast.makeText(
-                    this@MainActivity,
-                    "Could not open the Privacy Policy",
-                    Toast.LENGTH_LONG
-                ).show()
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        createScreen()
+
+        MobileAds.initialize(this) {
+            runOnUiThread {
+                loadBannerAd()
             }
         }
     }
-    val note = TextView(this).apply {
-        text = "Choose one or more pictures, then convert them into a single PDF. You can choose where to save the file."
-        textSize = 14f
-        setTextColor(Color.GRAY)
-        gravity = Gravity.CENTER
-        setPadding(0, 24, 0, 16)
-    }
 
-    layout.addView(title)
-    layout.addView(subtitle)
-    layout.addView(chooseButton, buttonParams())
-    layout.addView(statusText)
-    layout.addView(createButton, buttonParams())
-    layout.addView(openButton, buttonParams())
-    layout.addView(privacyButton, buttonParams())
-    layout.addView(note)
+    private fun createScreen() {
+        val root = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setBackgroundColor(Color.rgb(245, 247, 252))
+            setPadding(20, 16, 20, 8)
+        }
 
-    scrollView.addView(layout)
-    outerLayout.addView(
-        scrollView,
-        LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            0,
-            1f
-        )
-    )
-    setContentView(outerLayout)
+        val scrollView = ScrollView(this)
 
-    MobileAds.initialize(this) {
-        runOnUiThread { loadBannerAd(outerLayout) }
-    }
-}
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER_HORIZONTAL
+        }
 
-private fun loadBannerAd(parent: LinearLayout) {
-    if (isFinishing || isDestroyed || bannerAd != null) return
+        val title = TextView(this).apply {
+            text = "Image to PDF"
+            textSize = 28f
+            setTextColor(Color.rgb(35, 55, 100))
+            gravity = Gravity.CENTER
+            setPadding(8, 24, 8, 8)
+        }
 
-    val adView = AdView(this)
-    adView.setAdSize(AdSize.BANNER)
-    adView.adUnitId = "ca-app-pub-1083885756946416/5224479810"
-    bannerAd = adView
+        val subtitle = TextView(this).apply {
+            text = "Convert your pictures into one PDF document"
+            textSize = 15f
+            setTextColor(Color.DKGRAY)
+            gravity = Gravity.CENTER
+            setPadding(8, 4, 8, 24)
+        }
 
-    val container = LinearLayout(this).apply {
-        gravity = Gravity.CENTER
-        setPadding(0, 8, 0, 8)
-        addView(
-            adView,
+        imageStatus = TextView(this).apply {
+            text = "No images selected yet"
+            textSize = 16f
+            setTextColor(Color.DKGRAY)
+            gravity = Gravity.CENTER
+            setPadding(12, 20, 12, 20)
+        }
+
+        content.addView(title)
+        content.addView(subtitle)
+        content.addView(imageStatus)
+
+        content.addView(makeButton("Select Images") {
+            selectImages()
+        })
+
+        content.addView(makeButton("Convert Images to PDF") {
+            createPdf()
+        })
+
+        content.addView(makeButton("Open Last Saved PDF") {
+            openLastSavedPdf()
+        })
+
+        content.addView(makeButton("Privacy Policy") {
+            openPrivacyPolicy()
+        })
+
+        val footer = TextView(this).apply {
+            text = "Select multiple pictures, then convert them into a PDF."
+            textSize = 13f
+            setTextColor(Color.GRAY)
+            gravity = Gravity.CENTER
+            setPadding(8, 18, 8, 20)
+        }
+
+        content.addView(footer)
+        scrollView.addView(content)
+
+        root.addView(
+            scrollView,
             LinearLayout.LayoutParams(
-                AdSize.BANNER.getWidthInPixels(this@MainActivity),
-                AdSize.BANNER.getHeightInPixels(this@MainActivity)
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                0,
+                1f
             )
         )
-    }
-    parent.addView(
-        container,
-        LinearLayout.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.WRAP_CONTENT
+
+        val adContainer = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+        }
+
+        adView = AdView(this)
+        adContainer.addView(
+            adView,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
         )
-    )
-    adView.loadAd(AdRequest.Builder().build())
-}
 
-private fun buttonParams(): LinearLayout.LayoutParams {
-    return LinearLayout.LayoutParams(
-        ViewGroup.LayoutParams.MATCH_PARENT,
-        ViewGroup.LayoutParams.WRAP_CONTENT
-    ).apply { bottomMargin = 12 }
-}
+        root.addView(
+            adContainer,
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+        )
 
-private fun chooseImages() {
-    val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-        addCategory(Intent.CATEGORY_OPENABLE)
-        type = "image/*"
-        putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        setContentView(root)
     }
-    startActivityForResult(intent, pickImagesRequest)
-}
 
-@Deprecated("Uses the compatible Android activity result method")
-override fun onActivityResult(
-    requestCode: Int,
-    resultCode: Int,
-    data: Intent?
-) {
-    super.onActivityResult(requestCode, resultCode, data)
-    if (resultCode != RESULT_OK || data == null) return
-
-    if (requestCode == pickImagesRequest) {
-        selectedImages.clear()
-        data.clipData?.let { clip ->
-            for (i in 0 until clip.itemCount) {
-                selectedImages.add(clip.getItemAt(i).uri)
+    private fun makeButton(
+        buttonText: String,
+        action: () -> Unit
+    ): Button {
+        return Button(this).apply {
+            text = buttonText
+            textSize = 16f
+            isAllCaps = false
+            setOnClickListener {
+                action()
             }
-        } ?: data.data?.let { uri ->
-            selectedImages.add(uri)
+
+            val params = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT
+            )
+            params.setMargins(0, 6, 0, 6)
+            layoutParams = params
         }
-        statusText.text = if (selectedImages.isEmpty()) {
-            "No pictures selected"
-        } else {
-            "${selectedImages.size} picture(s) selected"
+    }
+
+    private fun selectImages() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "image/*"
+            putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         }
-        createButton.isEnabled = selectedImages.isNotEmpty()
+
+        startActivityForResult(intent, PICK_IMAGES_REQUEST)
     }
 
-    if (requestCode == savePdfRequest) {
-        data.data?.let { savePdfTo(it) }
-    }
-}
+    @Deprecated("Uses the activity result callback for broad Android compatibility")
+    override fun onActivityResult(
+        requestCode: Int,
+        resultCode: Int,
+        data: Intent?
+    ) {
+        super.onActivityResult(requestCode, resultCode, data)
 
-private fun startPdfCreation() {
-    if (selectedImages.isEmpty()) {
-        Toast.makeText(this, "Select pictures first", Toast.LENGTH_SHORT).show()
-        return
-    }
-    val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-        addCategory(Intent.CATEGORY_OPENABLE)
-        type = "application/pdf"
-        putExtra(Intent.EXTRA_TITLE, "MyPictures.pdf")
-    }
-    startActivityForResult(intent, savePdfRequest)
-}
+        if (resultCode != RESULT_OK || data == null) {
+            return
+        }
 
-private fun savePdfTo(destination: Uri) {
-    createButton.isEnabled = false
-    statusText.text = "Creating your PDF..."
+        when (requestCode) {
+            PICK_IMAGES_REQUEST -> {
+                selectedImages.clear()
 
-    Thread {
+                val clipData = data.clipData
+
+                if (clipData != null) {
+                    for (i in 0 until clipData.itemCount) {
+                        selectedImages.add(clipData.getItemAt(i).uri)
+                    }
+                } else {
+                    data.data?.let { uri ->
+                        selectedImages.add(uri)
+                    }
+                }
+
+                imageStatus.text = if (selectedImages.isEmpty()) {
+                    "No images selected yet"
+                } else {
+                    "${selectedImages.size} image(s) selected"
+                }
+
+                if (selectedImages.isNotEmpty()) {
+                    Toast.makeText(
+                        this,
+                        "${selectedImages.size} image(s) selected",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            }
+
+            CREATE_PDF_REQUEST -> {
+                val destination = data.data
+
+                if (destination != null) {
+                    savePdfToUri(destination)
+                }
+            }
+        }
+    }
+
+    private fun createPdf() {
+        if (selectedImages.isEmpty()) {
+            Toast.makeText(
+                this,
+                "Please select images first",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/pdf"
+            putExtra(
+                Intent.EXTRA_TITLE,
+                "Converted_Images.pdf"
+            )
+        }
+
+        startActivityForResult(intent, CREATE_PDF_REQUEST)
+    }
+
+    private fun savePdfToUri(destination: Uri) {
         var document: PdfDocument? = null
+
         try {
             document = PdfDocument()
-            selectedImages.forEachIndexed { index, uri ->
-                val bitmap = contentResolver.openInputStream(uri).use { stream ->
-                    BitmapFactory.decodeStream(stream)
-                } ?: throw Exception("Could not read picture ${index + 1}")
+
+            val pageWidth = 595
+            val pageHeight = 842
+            val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+            for ((index, uri) in selectedImages.withIndex()) {
+                val bitmap = contentResolver.openInputStream(uri)?.use {
+                    BitmapFactory.decodeStream(it)
+                } ?: throw IllegalStateException(
+                    "Could not read image ${index + 1}"
+                )
 
                 try {
-                    val pageWidth = 595
-                    val pageHeight = 842
-                    val margin = 28f
                     val pageInfo = PdfDocument.PageInfo.Builder(
-                        pageWidth, pageHeight, index + 1
+                        pageWidth,
+                        pageHeight,
+                        index + 1
                     ).create()
+
                     val page = document.startPage(pageInfo)
-                    val paint = Paint(
-                        Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG
-                    )
-                    val available = RectF(
-                        margin, margin,
-                        pageWidth - margin, pageHeight - margin
-                    )
+                    val canvas: Canvas = page.canvas
+
+                    canvas.drawColor(Color.WHITE)
+
+                    val margin = 24f
+                    val availableWidth = pageWidth - margin * 2
+                    val availableHeight = pageHeight - margin * 2
+
                     val scale = minOf(
-                        available.width() / bitmap.width,
-                        available.height() / bitmap.height
+                        availableWidth / bitmap.width.toFloat(),
+                        availableHeight / bitmap.height.toFloat()
                     )
+
                     val drawWidth = bitmap.width * scale
                     val drawHeight = bitmap.height * scale
+
                     val left = (pageWidth - drawWidth) / 2f
                     val top = (pageHeight - drawHeight) / 2f
 
-                    page.canvas.drawColor(Color.WHITE)
-                    page.canvas.drawBitmap(
+                    canvas.drawBitmap(
                         bitmap,
                         null,
-                        RectF(
-                            left, top,
-                            left + drawWidth, top + drawHeight
+                        android.graphics.RectF(
+                            left,
+                            top,
+                            left + drawWidth,
+                            top + drawHeight
                         ),
                         paint
                     )
+
                     document.finishPage(page)
                 } finally {
                     bitmap.recycle()
                 }
             }
 
-            contentResolver.openOutputStream(destination, "w").use { output ->
-                if (output == null) throw Exception("Cannot open save location")
+            contentResolver.openOutputStream(destination)?.use { output ->
                 document.writeTo(output)
-            }
+            } ?: throw IllegalStateException(
+                "Could not save the PDF to the selected location"
+            )
 
-            runOnUiThread {
-                lastSavedPdf = destination
-                statusText.text = "PDF saved successfully!"
-                Toast.makeText(
-                    this, "Your PDF has been saved", Toast.LENGTH_LONG
-                ).show()
-                createButton.isEnabled = selectedImages.isNotEmpty()
-                openLastPdf()
-            }
+            lastSavedPdf = destination
+
+            Toast.makeText(
+                this,
+                "PDF saved successfully",
+                Toast.LENGTH_LONG
+            ).show()
+
         } catch (e: Exception) {
-            runOnUiThread {
-                statusText.text = "Could not create PDF. Please try again."
-                Toast.makeText(
-                    this, e.message ?: "An error occurred", Toast.LENGTH_LONG
-                ).show()
-                createButton.isEnabled = selectedImages.isNotEmpty()
-            }
+            Toast.makeText(
+                this,
+                "PDF error: ${e.message ?: "Unable to create PDF"}",
+                Toast.LENGTH_LONG
+            ).show()
         } finally {
             document?.close()
         }
-    }.start()
-}
-
-private fun openLastPdf() {
-    val uri = lastSavedPdf ?: run {
-        Toast.makeText(this, "Save a PDF first", Toast.LENGTH_SHORT).show()
-        return
     }
-    val intent = Intent(Intent.ACTION_VIEW).apply {
-        setDataAndType(uri, "application/pdf")
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-    try {
-        startActivity(intent)
-    } catch (_: Exception) {
-        Toast.makeText(
-            this,
-            "PDF saved. Install a PDF viewer to open it.",
-            Toast.LENGTH_LONG
-        ).show()
-    }
-}
 
-override fun onDestroy() {
-    bannerAd?.destroy()
-    bannerAd = null
-    super.onDestroy()
-}
-```
+    private fun openLastSavedPdf() {
+        val pdfUri = lastSavedPdf
 
+        if (pdfUri == null) {
+            Toast.makeText(
+                this,
+                "Create and save a PDF first",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        try {
+            val intent = Intent(Intent.ACTION_VIEW).apply {
+                setDataAndType(pdfUri, "application/pdf")
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(
+                this,
+                "No PDF viewer found on this phone",
+                Toast.LENGTH_LONG
+            ).show()
+        }
+    }
+
+    private fun openPrivacyPolicy() {
+        try {
+            val intent = Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse(PRIVACY_POLICY_URL)
+            )
+            startActivity(intent)
+        } catch (e: Exception) {
+            Toast.makeText(
+                this,
+                "Could not open the Privacy Policy",
+                Toast.LENGTH_SHORT
+            ).show()
+        }
+    }
+
+    private fun loadBannerAd() {
+        adView.adUnitId = BANNER_AD_UNIT_ID
+        adView.setAdSize(AdSize.BANNER)
+
+        val request = AdRequest.Builder().build()
+        adView.loadAd(request)
+    }
+
+    override fun onDestroy() {
+        if (::adView.isInitialized) {
+            adView.destroy()
+        }
+        super.onDestroy()
+    }
 }
