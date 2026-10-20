@@ -226,7 +226,7 @@ class MainActivity : Activity() {
         }
     }
 
-    // INTERSTITIAL AD: load the ad before it is needed.
+    // INTERSTITIAL AD
     private fun loadInterstitialAd() {
         InterstitialAd.load(
             this,
@@ -285,8 +285,7 @@ class MainActivity : Activity() {
         startActivityForResult(intent, PICK_IMAGES_REQUEST)
     }
 
-    // APP OPEN AD: display at launch/foreground when available,
-    // with a four-hour interval between displays.
+    // APP OPEN AD
     private fun loadAppOpenAd() {
         AppOpenAd.load(
             this,
@@ -310,10 +309,10 @@ class MainActivity : Activity() {
         if (!activityResumed) return
 
         val ad = appOpenAd ?: return
-
         val now = System.currentTimeMillis()
 
-        if (lastAppOpenAdTime != 0L &&
+        if (
+            lastAppOpenAdTime != 0L &&
             now - lastAppOpenAdTime < APP_OPEN_INTERVAL_MS
         ) {
             return
@@ -339,7 +338,7 @@ class MainActivity : Activity() {
         ad.show(this)
     }
 
-    // REWARDED AD: the user may watch, save without an ad, or cancel.
+    // REWARDED AD
     private fun loadRewardedAd() {
         RewardedAd.load(
             this,
@@ -496,7 +495,8 @@ class MainActivity : Activity() {
                 }
             }
 
-        ad.show(this) { _, _ ->
+        // FIX: RewardedAd.show expects one RewardItem parameter.
+        ad.show(this) { _ ->
             rewardEarned = true
         }
     }
