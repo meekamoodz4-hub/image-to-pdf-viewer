@@ -2,7 +2,9 @@
 package com.meekamoodz.imagepdfviewer
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
 import android.graphics.Color
@@ -48,6 +50,13 @@ class MainActivity : Activity() {
     private var activityResumed = false
     private var lastAppOpenAdTime = 0L
     private var rewardEarned = false
+    private var selectedCompression = CompressionOption.BALANCED
+
+    private enum class CompressionOption(val label: String, val maxDimension: Int, val description: String) {
+        ORIGINAL("High quality - larger PDF", 2600, "Best detail, larger file"),
+        BALANCED("Balanced - recommended", 1800, "Good quality with smaller size"),
+        SMALL("Small PDF - compressed", 1200, "Smaller file, reduced detail")
+    }
 
     companion object {
         private const val PICK_IMAGES_REQUEST = 100
@@ -187,7 +196,7 @@ class MainActivity : Activity() {
             setPadding(0, 8, 0, 6)
         })
         hero.addView(TextView(this).apply {
-            text = "Select your pictures and combine them into one document in just a few taps."
+            text = "Convert pictures into a PDF, then choose a quality level to balance clarity and file size."
             textSize = 14f
             gravity = Gravity.CENTER
             setTextColor(pale)
@@ -214,6 +223,7 @@ class MainActivity : Activity() {
         })
 
         content.addView(makeButton("▤   Create PDF", blue) { createPdf() })
+        content.addView(makeButton("⇩   PDF Compressor & Quality", panel, pale) { chooseCompression() })
         content.addView(makeButton("▣   Open Last Saved PDF", panel, pale) { openLastSavedPdf() })
         content.addView(makeButton("♡   Privacy Policy", panel, pale) { openPrivacyPolicy() })
 
@@ -412,6 +422,20 @@ class MainActivity : Activity() {
         )
     }
 
+    private fun chooseCompression() {
+        val options = CompressionOption.values()
+        AlertDialog.Builder(this)
+            .setTitle("PDF size and image quality")
+            .setSingleChoiceItems(options.map { it.label + "\\n" + it.description }.toTypedArray(), options.indexOf(selectedCompression)) { dialog, which ->
+                selectedCompression = options[which]
+                dialog.dismiss()
+                Toast.makeText(this, "Selected: " + selectedCompression.label, Toast.LENGTH_SHORT).show()
+                createPdf()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+
     private fun createPdf() {
         if (selectedImages.isEmpty()) {
             Toast.makeText(
@@ -422,16 +446,19 @@ class MainActivity : Activity() {
             return
         }
 
-        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-            addCategory(Intent.CATEGORY_OPENABLE)
-            type = "application/pdf"
-            putExtra(
-                Intent.EXTRA_TITLE,
-                "Converted_Images.pdf"
-            )
-        }
-
-        startActivityForResult(intent, CREATE_PDF_REQUEST)
+        AlertDialog.Builder(this)
+            .setTitle("Choose PDF quality")
+            .setMessage("Current option: " + selectedCompression.label + "\\n" + selectedCompression.description + "\\n\\nHigher quality keeps more detail. Smaller PDF reduces image resolution and may look less sharp.")
+            .setPositiveButton("Continue") { _, _ ->
+                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    addCategory(Intent.CATEGORY_OPENABLE)
+                    type = "application/pdf"
+                    putExtra(Intent.EXTRA_TITLE, "Converted_Images.pdf")
+                }
+                startActivityForResult(intent, CREATE_PDF_REQUEST)
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     @Deprecated("Uses the activity result callback for broad Android compatibility")
@@ -565,15 +592,16 @@ class MainActivity : Activity() {
             val paint = Paint(Paint.ANTI_ALIAS_FLAG)
 
             for ((index, uri) in selectedImages.withIndex()) {
-                val bitmap = contentResolver
+                val decodedBitmap = contentResolver
                     .openInputStream(uri)
-                    ?.use { input ->
-                        BitmapFactory.decodeStream(input)
-                    } ?: throw IllegalStateException(
-                    "Could not read image ${index + 1}"
-                )
+                    ?.use { input -> BitmapFactory.decodeStream(input) }
+                    ?: throw IllegalStateException(
+                        "This image format could not be decoded on this Android device (image ${index + 1}). Try saving it as JPG or PNG and selecting it again."
+                    )
+                val bitmap = resizeForPdf(decodedBitmap, selectedCompression.maxDimension)
 
                 try {
+                    if (bitmap !== decodedBitmap) decodedBitmap.recycle()
                     val pageInfo = PdfDocument.PageInfo.Builder(
                         pageWidth,
                         pageHeight,
@@ -643,6 +671,15 @@ class MainActivity : Activity() {
         } finally {
             document?.close()
         }
+    }
+
+    private fun resizeForPdf(source: Bitmap, maxDimension: Int): Bitmap {
+        val largest = maxOf(source.width, source.height)
+        if (largest <= maxDimension) return source
+        val scale = maxDimension.toFloat() / largest.toFloat()
+        val width = maxOf(1, (source.width * scale).toInt())
+        val height = maxOf(1, (source.height * scale).toInt())
+        return Bitmap.createScaledBitmap(source, width, height, true)
     }
 
     private fun openLastSavedPdf() {
