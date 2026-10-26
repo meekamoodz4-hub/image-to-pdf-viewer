@@ -424,13 +424,20 @@ class MainActivity : Activity() {
 
     private fun chooseCompression() {
         val options = CompressionOption.values()
+        val optionLabels = options.map { option ->
+            "${option.label}\n${option.description}" 
+        }.toTypedArray()
+
         AlertDialog.Builder(this)
-            .setTitle("PDF size and image quality")
-            .setSingleChoiceItems(options.map { it.label + "\\n" + it.description }.toTypedArray(), options.indexOf(selectedCompression)) { dialog, which ->
+            .setTitle("Choose PDF quality")
+            .setItems(optionLabels) { dialog, which ->
                 selectedCompression = options[which]
                 dialog.dismiss()
-                Toast.makeText(this, "Selected: " + selectedCompression.label, Toast.LENGTH_SHORT).show()
-                createPdf()
+                Toast.makeText(
+                    this,
+                    "Quality selected: ${selectedCompression.label}. Tap Create PDF when ready.",
+                    Toast.LENGTH_LONG
+                ).show()
             }
             .setNegativeButton("Cancel", null)
             .show()
