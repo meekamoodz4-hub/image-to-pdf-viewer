@@ -446,19 +446,12 @@ class MainActivity : Activity() {
             return
         }
 
-        AlertDialog.Builder(this)
-            .setTitle("Choose PDF quality")
-            .setMessage("Current option: " + selectedCompression.label + "\\n" + selectedCompression.description + "\\n\\nHigher quality keeps more detail. Smaller PDF reduces image resolution and may look less sharp.")
-            .setPositiveButton("Continue") { _, _ ->
-                val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                    type = "application/pdf"
-                    putExtra(Intent.EXTRA_TITLE, "Converted_Images.pdf")
-                }
-                startActivityForResult(intent, CREATE_PDF_REQUEST)
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+        val intent = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "application/pdf"
+            putExtra(Intent.EXTRA_TITLE, "Converted_Images.pdf")
+        }
+        startActivityForResult(intent, CREATE_PDF_REQUEST)
     }
 
     @Deprecated("Uses the activity result callback for broad Android compatibility")
