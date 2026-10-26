@@ -99,128 +99,181 @@ class MainActivity : Activity() {
     }
 
     private fun createScreen() {
+        val page = Color.rgb(16, 22, 42)
+        val panel = Color.rgb(29, 38, 65)
+        val purple = Color.rgb(119, 87, 255)
+        val blue = Color.rgb(74, 166, 255)
+        val pale = Color.rgb(220, 226, 247)
+        val muted = Color.rgb(166, 178, 211)
+
+        window.statusBarColor = page
+        window.navigationBarColor = page
+        window.decorView.systemUiVisibility = 0
+
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setBackgroundColor(Color.rgb(245, 247, 252))
-            setPadding(20, 16, 20, 8)
+            setBackgroundColor(page)
+            setPadding(18, 12, 18, 8)
         }
 
-        val scrollView = ScrollView(this)
+        val scrollView = ScrollView(this).apply {
+            clipToPadding = false
+            isFillViewport = true
+        }
 
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
+            setPadding(0, 4, 0, 16)
         }
 
-        val title = TextView(this).apply {
-            text = "Image to PDF Viewer Converter"
-            textSize = 25f
-            setTextColor(Color.rgb(35, 55, 100))
-            gravity = Gravity.CENTER
-            setPadding(8, 24, 8, 8)
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(2, 10, 2, 18)
         }
 
-        val subtitle = TextView(this).apply {
-            text = "Convert your pictures into one PDF document"
-            textSize = 15f
-            setTextColor(Color.DKGRAY)
+        val logo = TextView(this).apply {
+            text = "▣"
+            textSize = 30f
             gravity = Gravity.CENTER
-            setPadding(8, 4, 8, 24)
+            setTextColor(Color.WHITE)
+            background = roundedBackground(purple, 18)
+            layoutParams = LinearLayout.LayoutParams(58, 58)
         }
+
+        val headingColumn = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(12, 0, 0, 0)
+        }
+
+        headingColumn.addView(TextView(this).apply {
+            text = "Image to PDF"
+            textSize = 23f
+            setTextColor(Color.WHITE)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+        })
+        headingColumn.addView(TextView(this).apply {
+            text = "VIEWER CONVERTER"
+            textSize = 11f
+            letterSpacing = 0.12f
+            setTextColor(muted)
+            setPadding(0, 3, 0, 0)
+        })
+
+        header.addView(logo)
+        header.addView(headingColumn, LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f))
+        content.addView(header)
+
+        val hero = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(20, 24, 20, 22)
+            background = roundedBackground(panel, 24)
+        }
+
+        hero.addView(TextView(this).apply {
+            text = "✦"
+            textSize = 34f
+            gravity = Gravity.CENTER
+            setTextColor(Color.rgb(173, 157, 255))
+        })
+        hero.addView(TextView(this).apply {
+            text = "Turn photos into PDFs"
+            textSize = 22f
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(0, 8, 0, 6)
+        })
+        hero.addView(TextView(this).apply {
+            text = "Select your pictures and combine them into one document in just a few taps."
+            textSize = 14f
+            gravity = Gravity.CENTER
+            setTextColor(pale)
+            setPadding(4, 0, 4, 18)
+        })
 
         imageStatus = TextView(this).apply {
             text = "No images selected yet"
-            textSize = 16f
-            setTextColor(Color.DKGRAY)
+            textSize = 14f
             gravity = Gravity.CENTER
-            setPadding(12, 20, 12, 20)
+            setTextColor(muted)
+            setPadding(12, 12, 12, 16)
         }
+        hero.addView(imageStatus)
+        hero.addView(makeButton("＋   Select Images", purple) { selectImagesWithAd() })
+        content.addView(hero)
 
-        content.addView(title)
-        content.addView(subtitle)
-        content.addView(imageStatus)
-
-        content.addView(makeButton("Select Images") {
-            selectImagesWithAd()
+        content.addView(TextView(this).apply {
+            text = "QUICK ACTIONS"
+            textSize = 12f
+            letterSpacing = 0.12f
+            setTextColor(muted)
+            setPadding(4, 24, 4, 10)
         })
 
-        content.addView(makeButton("Convert Images to PDF") {
-            createPdf()
-        })
+        content.addView(makeButton("▤   Create PDF", blue) { createPdf() })
+        content.addView(makeButton("▣   Open Last Saved PDF", panel, pale) { openLastSavedPdf() })
+        content.addView(makeButton("♡   Privacy Policy", panel, pale) { openPrivacyPolicy() })
 
-        content.addView(makeButton("Open Last Saved PDF") {
-            openLastSavedPdf()
-        })
-
-        content.addView(makeButton("Privacy Policy") {
-            openPrivacyPolicy()
-        })
-
-        val footer = TextView(this).apply {
-            text = "Select multiple pictures, then convert them into a PDF."
-            textSize = 13f
-            setTextColor(Color.GRAY)
+        content.addView(TextView(this).apply {
+            text = "Simple • Fast • Easy to use"
+            textSize = 12f
             gravity = Gravity.CENTER
-            setPadding(8, 18, 8, 20)
-        }
+            setTextColor(muted)
+            setPadding(8, 18, 8, 8)
+        })
 
-        content.addView(footer)
         scrollView.addView(content)
-
-        root.addView(
-            scrollView,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                0,
-                1f
-            )
-        )
+        root.addView(scrollView, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f
+        ))
 
         val adContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
+            setPadding(0, 6, 0, 2)
         }
-
         adView = AdView(this)
-
-        adContainer.addView(
-            adView,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        )
-
-        root.addView(
-            adContainer,
-            LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        )
-
+        adContainer.addView(adView, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ))
+        root.addView(adContainer, LinearLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+        ))
         setContentView(root)
+    }
+
+    private fun roundedBackground(color: Int, radiusDp: Int): android.graphics.drawable.GradientDrawable {
+        return android.graphics.drawable.GradientDrawable().apply {
+            setColor(color)
+            cornerRadius = radiusDp * resources.displayMetrics.density
+        }
     }
 
     private fun makeButton(
         buttonText: String,
+        backgroundColor: Int,
+        textColor: Int = Color.WHITE,
         action: () -> Unit
     ): Button {
         return Button(this).apply {
             text = buttonText
-            textSize = 16f
+            textSize = 15f
             isAllCaps = false
-
-            setOnClickListener {
-                action()
-            }
-
+            setTextColor(textColor)
+            background = roundedBackground(backgroundColor, 16)
+            stateListAnimator = null
+            elevation = 0f
+            minHeight = (54 * resources.displayMetrics.density).toInt()
+            setPadding(16, 10, 16, 10)
+            setOnClickListener { action() }
             val params = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT
             )
-
-            params.setMargins(0, 6, 0, 6)
+            params.setMargins(0, 5, 0, 5)
             layoutParams = params
         }
     }
