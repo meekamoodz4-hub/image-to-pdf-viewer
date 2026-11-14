@@ -303,7 +303,7 @@ class MainActivity : Activity() {
             background = android.graphics.drawable.GradientDrawable().apply {
                 setColor(Color.rgb(20, 37, 78))
                 cornerRadius = dp(20).toFloat()
-                setStroke(dp(1), Color.argb(90, accent))
+                setStroke(dp(1), Color.argb(90, Color.red(accent), Color.green(accent), Color.blue(accent)))
             }
             isClickable = true
             isFocusable = true
