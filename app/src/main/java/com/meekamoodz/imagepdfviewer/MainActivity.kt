@@ -108,12 +108,12 @@ class MainActivity : Activity() {
     }
 
     private fun createScreen() {
-        val page = Color.rgb(16, 22, 42)
-        val panel = Color.rgb(29, 38, 65)
-        val purple = Color.rgb(119, 87, 255)
-        val blue = Color.rgb(74, 166, 255)
-        val pale = Color.rgb(220, 226, 247)
-        val muted = Color.rgb(166, 178, 211)
+        val page = Color.rgb(8, 18, 48)
+        val panel = Color.rgb(19, 38, 83)
+        val blue = Color.rgb(24, 117, 255)
+        val cyan = Color.rgb(0, 205, 255)
+        val pale = Color.rgb(229, 238, 255)
+        val muted = Color.rgb(164, 185, 224)
 
         window.statusBarColor = page
         window.navigationBarColor = page
@@ -122,7 +122,7 @@ class MainActivity : Activity() {
         val root = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setBackgroundColor(page)
-            setPadding(18, 12, 18, 8)
+            setPadding(dp(16), dp(10), dp(16), dp(6))
         }
 
         val scrollView = ScrollView(this).apply {
@@ -132,28 +132,28 @@ class MainActivity : Activity() {
 
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(0, 4, 0, 16)
+            setPadding(0, dp(4), 0, dp(16))
         }
 
         val header = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(2, 10, 2, 18)
+            setPadding(dp(2), dp(8), dp(2), dp(18))
         }
 
         val logo = TextView(this).apply {
-            text = "▣"
-            textSize = 30f
+            text = "PDF"
+            textSize = 16f
             gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
-            background = roundedBackground(purple, 18)
-            layoutParams = LinearLayout.LayoutParams(58, 58)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            background = roundedBackground(blue, 18)
+            layoutParams = LinearLayout.LayoutParams(dp(58), dp(58))
         }
 
         val headingColumn = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(12, 0, 0, 0)
+            setPadding(dp(12), 0, 0, 0)
         }
 
         headingColumn.addView(TextView(this).apply {
@@ -163,11 +163,11 @@ class MainActivity : Activity() {
             setTypeface(null, android.graphics.Typeface.BOLD)
         })
         headingColumn.addView(TextView(this).apply {
-            text = "VIEWER CONVERTER"
-            textSize = 11f
+            text = "VIEWER  •  CONVERTER"
+            textSize = 10f
             letterSpacing = 0.12f
             setTextColor(muted)
-            setPadding(0, 3, 0, 0)
+            setPadding(0, dp(3), 0, 0)
         })
 
         header.addView(logo)
@@ -177,63 +177,94 @@ class MainActivity : Activity() {
         val hero = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(20, 24, 20, 22)
-            background = roundedBackground(panel, 24)
+            setPadding(dp(20), dp(22), dp(20), dp(20))
+            background = android.graphics.drawable.GradientDrawable(
+                android.graphics.drawable.GradientDrawable.Orientation.TL_BR,
+                intArrayOf(Color.rgb(24, 106, 245), Color.rgb(31, 48, 125), Color.rgb(20, 30, 77))
+            ).apply { cornerRadius = dp(24).toFloat() }
         }
 
         hero.addView(TextView(this).apply {
-            text = "✦"
+            text = "📸   ➜   📄"
             textSize = 34f
             gravity = Gravity.CENTER
-            setTextColor(Color.rgb(173, 157, 255))
+            setPadding(0, 0, 0, dp(6))
         })
         hero.addView(TextView(this).apply {
-            text = "Turn photos into PDFs"
-            textSize = 22f
+            text = "Everything PDF, made simple"
+            textSize = 21f
             gravity = Gravity.CENTER
             setTextColor(Color.WHITE)
             setTypeface(null, android.graphics.Typeface.BOLD)
-            setPadding(0, 8, 0, 6)
         })
         hero.addView(TextView(this).apply {
-            text = "Convert pictures into a PDF, then choose a quality level to balance clarity and file size."
-            textSize = 14f
+            text = "Convert your pictures, view documents and reduce PDF file sizes."
+            textSize = 13f
             gravity = Gravity.CENTER
             setTextColor(pale)
-            setPadding(4, 0, 4, 18)
+            setPadding(dp(4), dp(7), dp(4), dp(14))
         })
 
         imageStatus = TextView(this).apply {
             text = "No images selected yet"
-            textSize = 14f
+            textSize = 13f
             gravity = Gravity.CENTER
-            setTextColor(muted)
-            setPadding(12, 12, 12, 16)
+            setTextColor(Color.WHITE)
+            setPadding(dp(12), dp(9), dp(12), dp(9))
+            background = roundedBackground(Color.argb(45, 255, 255, 255), 14)
         }
         hero.addView(imageStatus)
-        hero.addView(makeButton("＋   Select Images", purple) { selectImagesWithAd() })
+        hero.addView(makeButton("＋   Select Photos", cyan) { selectImagesWithAd() })
         content.addView(hero)
 
         content.addView(TextView(this).apply {
-            text = "QUICK ACTIONS"
+            text = "YOUR PDF TOOLS"
             textSize = 12f
-            letterSpacing = 0.12f
+            letterSpacing = 0.14f
             setTextColor(muted)
-            setPadding(4, 24, 4, 10)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+            setPadding(dp(4), dp(22), dp(4), dp(9))
         })
 
-        content.addView(makeButton("▤   Create PDF", blue) { createPdf() })
-        content.addView(makeButton("⇩   PDF Compressor & Quality", panel, pale) { chooseCompression() })
-        content.addView(makeButton("▣   Open Last Saved PDF", panel, pale) { openLastSavedPdf() })
-        content.addView(makeButton("♡   Privacy Policy", panel, pale) { openPrivacyPolicy() })
+        val firstRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        firstRow.addView(makeFeatureCard("🖼️", "Image to PDF", "Select photos and convert", Color.rgb(28, 126, 255)) {
+            selectImagesWithAd()
+        }, LinearLayout.LayoutParams(0, dp(142), 1f).apply { setMargins(0, 0, dp(6), dp(6)) })
+        firstRow.addView(makeFeatureCard("📄", "Create PDF", "Save your document", Color.rgb(15, 169, 202)) {
+            createPdf()
+        }, LinearLayout.LayoutParams(0, dp(142), 1f).apply { setMargins(dp(6), 0, 0, dp(6)) })
+        content.addView(firstRow)
+
+        val secondRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+        }
+        secondRow.addView(makeFeatureCard("🗜️", "PDF Compressor", "Choose quality settings", Color.rgb(32, 174, 111)) {
+            chooseCompression()
+        }, LinearLayout.LayoutParams(0, dp(142), 1f).apply { setMargins(0, dp(6), dp(6), 0) })
+        secondRow.addView(makeFeatureCard("👁️", "PDF Viewer", "Open your last saved PDF", Color.rgb(133, 83, 245)) {
+            openLastSavedPdf()
+        }, LinearLayout.LayoutParams(0, dp(142), 1f).apply { setMargins(dp(6), dp(6), 0, 0) })
+        content.addView(secondRow)
 
         content.addView(TextView(this).apply {
-            text = "Simple • Fast • Easy to use"
+            text = "Simple  •  Fast  •  Convenient"
             textSize = 12f
             gravity = Gravity.CENTER
             setTextColor(muted)
-            setPadding(8, 18, 8, 8)
+            setPadding(dp(8), dp(18), dp(8), dp(6))
         })
+
+        val privacyButton = TextView(this).apply {
+            text = "🔒  Privacy Policy"
+            textSize = 13f
+            gravity = Gravity.CENTER
+            setTextColor(pale)
+            setPadding(dp(12), dp(10), dp(12), dp(10))
+            setOnClickListener { openPrivacyPolicy() }
+        }
+        content.addView(privacyButton)
 
         scrollView.addView(content)
         root.addView(scrollView, LinearLayout.LayoutParams(
@@ -243,7 +274,7 @@ class MainActivity : Activity() {
         val adContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER
-            setPadding(0, 6, 0, 2)
+            setPadding(0, dp(5), 0, dp(2))
         }
         adView = AdView(this)
         adContainer.addView(adView, LinearLayout.LayoutParams(
@@ -253,6 +284,60 @@ class MainActivity : Activity() {
             ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
         ))
         setContentView(root)
+    }
+
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
+
+    private fun makeFeatureCard(
+        icon: String,
+        title: String,
+        subtitle: String,
+        accent: Int,
+        action: () -> Unit
+    ): LinearLayout {
+        val card = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(dp(10), dp(12), dp(10), dp(10))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                setColor(Color.rgb(20, 37, 78))
+                cornerRadius = dp(20).toFloat()
+                setStroke(dp(1), Color.argb(90, accent))
+            }
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { action() }
+            elevation = dp(2).toFloat()
+        }
+
+        val iconView = TextView(this).apply {
+            text = icon
+            textSize = 29f
+            gravity = Gravity.CENTER
+            background = roundedBackground(accent, 18)
+            layoutParams = LinearLayout.LayoutParams(dp(58), dp(54)).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+                bottomMargin = dp(8)
+            }
+        }
+        card.addView(iconView)
+
+        card.addView(TextView(this).apply {
+            text = title
+            textSize = 15f
+            gravity = Gravity.CENTER
+            setTextColor(Color.WHITE)
+            setTypeface(null, android.graphics.Typeface.BOLD)
+        })
+        card.addView(TextView(this).apply {
+            text = subtitle
+            textSize = 11f
+            gravity = Gravity.CENTER
+            setTextColor(Color.rgb(177, 194, 229))
+            setPadding(0, dp(4), 0, 0)
+        })
+        return card
     }
 
     private fun roundedBackground(color: Int, radiusDp: Int): android.graphics.drawable.GradientDrawable {
