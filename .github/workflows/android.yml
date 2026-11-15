@@ -33,8 +33,22 @@ jobs:
             echo "Missing GitHub Actions secret: ANDROID_KEYSTORE_BASE64"
             exit 1
           fi
-          echo "$ANDROID_KEYSTORE_BASE64" | base64 --decode > app/upload-key.jks
+          python3 - <<'PY'
+          import base64, os, re
+          value = os.environ["ANDROID_KEYSTORE_BASE64"].strip()
+          marker = value.find("/u3+")
+          if marker >= 0:
+              value = value[marker:]
+          value = re.sub(r"[^A-Za-z0-9+/=]", "", value)
+          try:
+              decoded = base64.b64decode(value, validate=True)
+          except Exception as exc:
+              raise SystemExit("Signing secret is incomplete or contains invalid Base64 characters.") from exc
+          with open("app/upload-key.jks", "wb") as key_file:
+              key_file.write(decoded)
+          PY
           test -s app/upload-key.jks
+          keytool -list -keystore app/upload-key.jks -storepass "$ANDROID_KEYSTORE_PASSWORD" >/dev/null
 
       - name: Build signed Android App Bundle
         env:
